@@ -24,11 +24,17 @@ final class RuntimeProbe {
                     if(target!=null){send(host,nonce,result);return;}target=i;
                 }
                 if(target==null){send(host,nonce,result);return;}
-                host.getSystemService(ImsManager.class).getImsMmTelManager(target.getSubscriptionId()).getRegistrationState(host.getMainExecutor(),state->{
-                    Bundle fresh=snapshot.get();fresh.putInt("ims",state);send(host,nonce,fresh);
+                final int sid=target.getSubscriptionId();
+                attempt(host,sid,result);send(host,nonce,result);
+                host.getSystemService(ImsManager.class).getImsMmTelManager(sid).getRegistrationState(host.getMainExecutor(),state->{
+                    Bundle fresh=snapshot.get();attempt(host,sid,fresh);fresh.putInt("ims",state);send(host,nonce,fresh);
                 });
             }catch(Throwable ignored){send(host,nonce,result);}
         }},new IntentFilter(QUERY),Manifest.permission.READ_PHONE_STATE,main,Context.RECEIVER_EXPORTED);
+    }
+    private static void attempt(Context host,int sid,Bundle result){
+        int boot=android.provider.Settings.Global.getInt(host.getContentResolver(),"boot_count",-1);
+        result.putBoolean("fallback_attempted",host.getSharedPreferences("pixel_vcrbt_fallback",0).getBoolean(boot+":"+sid,false));
     }
     private static void send(Context host,String nonce,Bundle result){
         host.sendBroadcast(new Intent(REPLY).setPackage(UI).putExtra("nonce",nonce).putExtra("result",result));

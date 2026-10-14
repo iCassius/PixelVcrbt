@@ -90,7 +90,7 @@ public final class DebugActivity extends Activity {
         if(!phonePermission)message="未授予电话状态权限：请在系统设置中允许该权限，才能读取前置配置和查询模块响应";
         TextView note=new TextView(this);note.setText(message);note.setTextSize(13);note.setTextColor(0xffb9c6d8);rows.addView(note);
         boolean missing=false;for(String[] f:ParameterReader.PROVIDER_FIELDS)missing|=!Boolean.TRUE.equals(result.values.get(f[0]));
-        if(missing&&phonePermission){TextView hint=new TextView(this);hint.setText(result.fallbackAvailable?"前置配置未齐：空闲时启动电话可触发一次兜底；仍未齐需其他模块提供。":"前置配置未齐：需要系统或其他模块提供。" );hint.setTextColor(0xfffacc15);rows.addView(hint);}
+        if(missing&&phonePermission){TextView hint=new TextView(this);hint.setText(runtime!=null&&runtime.getBoolean("fallback_attempted")?"前置配置仍未齐：本次开机已尝试兜底，不反复覆盖；需其他模块提供。":result.fallbackAvailable?"前置配置未齐：空闲时启动电话可触发一次兜底；仍未齐需其他模块提供。":"前置配置未齐：需要系统或其他模块提供。" );hint.setTextColor(0xfffacc15);rows.addView(hint);}
     }
     private void runtimeRow(String label,String value){TextView t=new TextView(this);t.setText(label+"  "+value);t.setTextSize(14);t.setTextColor(Color.WHITE);t.setPadding(0,dp(5),0,dp(5));rows.addView(t);}
     private void section(String text){TextView title=new TextView(this);title.setText(text);title.setTextColor(Color.WHITE);title.setTextSize(17);title.setPadding(0,dp(10),0,dp(8));rows.addView(title);}
