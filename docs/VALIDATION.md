@@ -2,6 +2,8 @@
 
 本地 JDK 21 / Android SDK 36.1 构建及签名验证通过。
 
+首次 GitHub Actions Linux 构建成功，运行同一组 49 项断言并生成 CI 调试 APK。CI 证据与实机证据分别记录，调试 APK 不作为稳定签名的 Release。
+
 纯 Java 测试：SessionGate 17、EarlyMediaPolicy 16、FallbackPlan 8、RuntimeReason 8，共 49 项断言通过。它们验证状态守卫、差量配置范围和提示分支，不代表真实网络或通话验收。
 
 此前 2.2.0 单键兜底实机测试：暂停外部策略守护后将默认承载视频参数置 false，Dialer 宿主补回并读取 true。只证明该键的写入／读回，不代表其他三键分别完成负向测试。

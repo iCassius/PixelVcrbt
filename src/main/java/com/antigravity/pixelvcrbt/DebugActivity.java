@@ -85,9 +85,12 @@ public final class DebugActivity extends Activity {
         if(runtime!=null&&!hook){String why=runtime.getString("init", "unknown");
             message="模块适配失败："+(why.equals("version_mismatch")?"Google 电话版本不兼容":why.equals("device_build_mismatch")?"设备或系统版本不兼容":"Hook 初始化失败，请检查 ADB 日志")+"；需兼容版本，扩大作用域不能解决";}
         if(hook&&runtime.getInt("call_state",-1)==android.telecom.Call.STATE_ACTIVE)message="通话已接通，彩铃阶段结束；视频会话与画面检测已清除";
+        if(hook&&ims<0)message+="；IMS 注册信息不可读取，需通过 ADB 日志核验，不能判为未注册";
+        boolean phonePermission=checkSelfPermission(Manifest.permission.READ_PHONE_STATE)==PackageManager.PERMISSION_GRANTED;
+        if(!phonePermission)message="未授予电话状态权限：请在系统设置中允许该权限，才能读取前置配置和查询模块响应";
         TextView note=new TextView(this);note.setText(message);note.setTextSize(13);note.setTextColor(0xffb9c6d8);rows.addView(note);
         boolean missing=false;for(String[] f:ParameterReader.PROVIDER_FIELDS)missing|=!Boolean.TRUE.equals(result.values.get(f[0]));
-        if(missing){TextView hint=new TextView(this);hint.setText(result.fallbackAvailable?"前置配置未齐：空闲时启动电话可触发一次兜底；仍未齐需其他模块提供。":"前置配置未齐：需要系统或其他模块提供。" );hint.setTextColor(0xfffacc15);rows.addView(hint);}
+        if(missing&&phonePermission){TextView hint=new TextView(this);hint.setText(result.fallbackAvailable?"前置配置未齐：空闲时启动电话可触发一次兜底；仍未齐需其他模块提供。":"前置配置未齐：需要系统或其他模块提供。" );hint.setTextColor(0xfffacc15);rows.addView(hint);}
     }
     private void runtimeRow(String label,String value){TextView t=new TextView(this);t.setText(label+"  "+value);t.setTextSize(14);t.setTextColor(Color.WHITE);t.setPadding(0,dp(5),0,dp(5));rows.addView(t);}
     private void section(String text){TextView title=new TextView(this);title.setText(text);title.setTextColor(Color.WHITE);title.setTextSize(17);title.setPadding(0,dp(10),0,dp(8));rows.addView(title);}
