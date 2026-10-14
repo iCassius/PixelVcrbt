@@ -2,11 +2,11 @@
   "schema": 1,
   "stable": null,
   "experimental": {
-    "versionCode": 17,
-    "versionName": "2.3.3-experimental",
-    "packageName": "com.antigravity.pixelvcrbt",
-    "tag": "v2.3.3-experimental",
-    "apk": "PixelVcrbt-v2.3.3-experimental.apk",
-    "sha256": "4bf527a64e06b941416920f4e8ce1c9fde2e975c2224172c818508376100fe68"
+    "versionCode": 18,
+    "versionName": "3.0.0-experimental",
+    "packageName": "io.github.icassius.pixelvcrbt",
+    "tag": "v3.0.0-experimental",
+    "apk": "PixelVcrbt-v3.0.0-experimental.apk",
+    "sha256": "cc8a0a11dc61306b9660061ad4915b30ffdaa001845190b675d3f4bc122ca7eb"
   }
 }
