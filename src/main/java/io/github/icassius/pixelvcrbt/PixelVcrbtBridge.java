@@ -1,4 +1,4 @@
-package com.antigravity.pixelvcrbt;
+package io.github.icassius.pixelvcrbt;
 
 import android.app.*;
 import android.content.*;

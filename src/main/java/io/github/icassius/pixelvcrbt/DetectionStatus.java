@@ -1,4 +1,4 @@
-package com.antigravity.pixelvcrbt;
+package io.github.icassius.pixelvcrbt;
 /** Settings are independent of a live host response. No response never means disabled. */
 final class DetectionStatus {
     static String setting(Object value){return value instanceof Boolean?((Boolean)value?"已开启":"已关闭"):"无法读取";}

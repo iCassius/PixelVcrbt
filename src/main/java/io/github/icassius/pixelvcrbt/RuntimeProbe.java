@@ -1,4 +1,4 @@
-package com.antigravity.pixelvcrbt;
+package io.github.icassius.pixelvcrbt;
 
 import android.Manifest;
 import android.content.*;
@@ -10,7 +10,7 @@ import java.util.function.Supplier;
 
 /** Live nonce-bound query. No persisted result, Root files or Dialer launch. */
 final class RuntimeProbe {
-    static final String UI="com.antigravity.pixelvcrbt", DIALER="com.google.android.dialer";
+    static final String UI="io.github.icassius.pixelvcrbt", DIALER="com.google.android.dialer";
     static final String QUERY=UI+".QUERY_RUNTIME", REPLY=UI+".RUNTIME_REPLY";
     static void install(Context host,Handler main,Supplier<Bundle> snapshot){
         host.registerReceiver(new BroadcastReceiver(){public void onReceive(Context c,Intent request){

@@ -22,7 +22,7 @@ class FeedTest(unittest.TestCase):
     def test_manifest_and_payload_metadata(self):
         with tempfile.TemporaryDirectory() as directory:
             root=pathlib.Path(directory);manifest=root/'manifest.xml';apk=root/'PixelVcrbt-v2.3.3-experimental.apk'
-            manifest.write_text('<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.antigravity.pixelvcrbt" android:versionName="2.3.3-experimental" android:versionCode="17"/>',encoding='utf-8');apk.write_bytes(b'fixture')
+            manifest.write_text('<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="io.github.icassius.pixelvcrbt" android:versionName="2.3.3-experimental" android:versionCode="17"/>',encoding='utf-8');apk.write_bytes(b'fixture')
             value=publish_update.entry(manifest,apk,'v2.3.3-experimental');self.assertEqual(value['versionCode'],17);self.assertEqual(value['sha256'],hashlib.sha256(b'fixture').hexdigest())
             with self.assertRaises(ValueError):publish_update.entry(manifest,apk,'v2.3.2-experimental')
 

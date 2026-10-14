@@ -1,4 +1,4 @@
-package com.antigravity.pixelvcrbt;
+package io.github.icassius.pixelvcrbt;
 public final class ModuleVersionTest {
     private static int checks;
     private static void check(boolean condition){checks++;if(!condition)throw new AssertionError("Check "+checks);}

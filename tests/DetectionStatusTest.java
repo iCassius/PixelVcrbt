@@ -1,4 +1,4 @@
-package com.antigravity.pixelvcrbt;
+package io.github.icassius.pixelvcrbt;
 public final class DetectionStatusTest {
     private static int checks;
     private static void check(String actual,String expected){checks++;if(!actual.equals(expected))throw new AssertionError(actual);}

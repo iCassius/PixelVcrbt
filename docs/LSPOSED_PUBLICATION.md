@@ -4,7 +4,7 @@
 
 ## 上架步骤
 
-1. 使用自己拥有的包名。当前 com.antigravity.pixelvcrbt 若无法证明域名所有权，不宜直接申请；无自有域名时可用 io.github.icassius.pixelvcrbt。更换 applicationId 是新应用安装，需迁移并禁用旧模块，避免重复 Hook；本次尚未改包名。
+1. 当前包名已迁移为 io.github.icassius.pixelvcrbt，对应 GitHub 用户 iCassius 与项目 PixelVcrbt。旧包 com.antigravity.pixelvcrbt 不能直接覆盖升级，需停用旧模块、安装新包并仅勾选 Dialer，避免重复 Hook。
 2. 在 Xposed-Modules-Repo/submission 创建 `[submission] 包名` 的 Issue，按官方要求验证身份，并接受维护邀请。自有域名的快速验证为根域名 TXT：lsposed-modules-repo-verification=iCassius。
 3. 生成的组织仓库存放精简说明与发行 APK；源代码仍保留在 iCassius/PixelVcrbt。组织仓库发布标签格式为 `versionCode-versionName`，附 APK 和变更说明；完整仓库通常在 5–60 分钟内索引。
 4. 取得组织仓库权限后可增加镜像发布任务。当前 GitHub Actions 已发布到个人仓库，但没有向第三方组织发送申请或配置写入凭据。

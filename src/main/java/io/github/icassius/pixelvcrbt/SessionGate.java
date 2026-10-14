@@ -1,4 +1,4 @@
-package com.antigravity.pixelvcrbt;
+package io.github.icassius.pixelvcrbt;
 
 /** Android-free decision core, tested with reordered events and stale generations. */
 public final class SessionGate {

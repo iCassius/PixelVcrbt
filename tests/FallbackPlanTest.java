@@ -1,4 +1,4 @@
-package com.antigravity.pixelvcrbt;
+package io.github.icassius.pixelvcrbt;
 import java.util.*;
 public final class FallbackPlanTest {
     static int n;static void check(boolean b,String name){n++;if(!b)throw new AssertionError(name);}

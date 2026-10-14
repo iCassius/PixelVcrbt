@@ -1,4 +1,4 @@
-package com.antigravity.pixelvcrbt;
+package io.github.icassius.pixelvcrbt;
 import java.math.BigInteger;
 import java.util.regex.*;
 

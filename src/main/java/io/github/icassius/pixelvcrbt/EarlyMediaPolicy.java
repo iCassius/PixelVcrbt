@@ -1,4 +1,4 @@
-package com.antigravity.pixelvcrbt;
+package io.github.icassius.pixelvcrbt;
 
 /** Call-local business intent and one-shot audio decision, independent of Android. */
 public final class EarlyMediaPolicy {

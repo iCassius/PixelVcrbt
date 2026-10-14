@@ -1,4 +1,4 @@
-package com.antigravity.pixelvcrbt;
+package io.github.icassius.pixelvcrbt;
 import java.util.*;
 
 /** Only the current video/transport prerequisite allowlist; no VoNR, CDMA or QoS tuning. */

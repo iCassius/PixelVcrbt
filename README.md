@@ -4,6 +4,8 @@
 
 当前只在 Pixel 10 Pro XL 10月系统验证测试, 未作其他机型和版本验证
 
+包名：`io.github.icassius.pixelvcrbt`。旧包升级需迁移安装，并停用旧模块。
+
 ## 安装与确认
 
 1. 安装 APK，启用 LSPosed 模块，仅选择 Google 电话。

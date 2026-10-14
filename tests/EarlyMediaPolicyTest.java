@@ -1,4 +1,4 @@
-package com.antigravity.pixelvcrbt;
+package io.github.icassius.pixelvcrbt;
 public final class EarlyMediaPolicyTest {
     static int checks;
     static void check(boolean b,String m){checks++;if(!b)throw new AssertionError(m);}
