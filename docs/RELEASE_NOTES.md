@@ -1,7 +1,8 @@
-Pixel彩铃激活模块 2.3.2-experimental
+Pixel彩铃激活模块 2.3.3-experimental
 
-- 撤销 2.0.8 起的按钮隐藏策略，原生按键层自行管理。
-- 实机验证退出全屏后五个原生按钮持续显示，原生禁用状态保留。
-- 保持仅 Dialer 作用域，状态页与配置策略不变。
+- 显示当前模块版本，检查 GitHub Release 更新。
+- 实验版检查实验／正式版；正式版不提示升级到实验版。
+- 查询失败可重试，仅打开官方 Release 页面，不自动下载安装。
+- 保持 Legacy API、Dialer 作用域与既有通话策略。
 
-55 项断言及一次未接听语音彩铃测试通过。系统通话记录的视频标签仍未修复，详见 docs/CONTROLS_AND_CALL_HISTORY.md。
+上架流程与 Modern API 迁移边界见 docs/LSPOSED_PUBLICATION.md。系统通话记录分类仍未修复。

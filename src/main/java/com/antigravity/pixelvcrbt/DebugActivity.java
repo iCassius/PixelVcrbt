@@ -15,6 +15,13 @@ import java.util.concurrent.*;
 public final class DebugActivity extends Activity {
     private LinearLayout rows;
     private final ExecutorService worker=Executors.newSingleThreadExecutor();
+    private final ExecutorService updates=Executors.newSingleThreadExecutor();
+    private TextView updateStatus;
+    private String currentVersion="unknown";
+    private long currentCode=-1;
+    private UpdateChecker.Result updateResult;
+    private boolean updatePending;
+    private long lastUpdateCheck;
     private boolean pending;
     private boolean readAgain;
     private final Handler main=new Handler(Looper.getMainLooper());
@@ -50,12 +57,27 @@ public final class DebugActivity extends Activity {
             v.setPadding(dp(16),bars.top+dp(14),dp(16),bars.bottom+dp(12));return insets;
         });
         TextView title=new TextView(this);title.setText("Pixel彩铃激活模块");title.setTextSize(24);title.setTextColor(Color.WHITE);root.addView(title);
+        try{android.content.pm.PackageInfo info=getPackageManager().getPackageInfo(getPackageName(),0);currentVersion=info.versionName;currentCode=info.getLongVersionCode();}catch(Exception ignored){}
+        LinearLayout versionRow=new LinearLayout(this);versionRow.setPadding(0,dp(8),0,0);
+        TextView version=new TextView(this);version.setText("版本 "+currentVersion);version.setTextSize(12);version.setTextColor(0xffb9c6d8);versionRow.addView(version,new LinearLayout.LayoutParams(0,-2,1));
+        updateStatus=new TextView(this);updateStatus.setText("检查更新");updateStatus.setTextSize(12);updateStatus.setTextColor(0xff93c5fd);updateStatus.setPadding(dp(8),0,0,0);
+        updateStatus.setOnClickListener(v->{if(updatePending)return;if(updateResult!=null&&updateResult.url!=null){
+            try{startActivity(new Intent(Intent.ACTION_VIEW,android.net.Uri.parse(updateResult.url)));}catch(ActivityNotFoundException ignored){updateStatus.setText("未找到浏览器");}
+        }else checkUpdate();});versionRow.addView(updateStatus);root.addView(versionRow);
         ScrollView scroll=new ScrollView(this);rows=new LinearLayout(this);rows.setOrientation(1);scroll.addView(rows);
         LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(-1,0,1);p.topMargin=dp(12);root.addView(scroll,p);setContentView(root);
         show(new ParameterReader.Result());
+        checkUpdate();
+    }
+    private void checkUpdate(){
+        if(updatePending)return;updatePending=true;lastUpdateCheck=SystemClock.elapsedRealtime();updateStatus.setText("检查中…");
+        updates.execute(()->{UpdateChecker.Result result=UpdateChecker.check(currentVersion,currentCode,getPackageName());runOnUiThread(()->{
+            updatePending=false;if(!isFinishing()&&!isDestroyed()){updateResult=result;updateStatus.setText(result.text);}
+        });});
     }
     protected void onResume(){
         super.onResume();
+        if(SystemClock.elapsedRealtime()-lastUpdateCheck>300000)checkUpdate();
         runtime=null;
         checking=true;
         registerReceiver(reply,new IntentFilter(RuntimeProbe.REPLY),"android.permission.READ_PRIVILEGED_PHONE_STATE",main,Context.RECEIVER_EXPORTED);
@@ -126,5 +148,5 @@ public final class DebugActivity extends Activity {
         }
     }
     protected void onPause(){main.removeCallbacksAndMessages(null);nonce=null;runtime=null;if(listening){unregisterReceiver(reply);listening=false;}super.onPause();}
-    protected void onDestroy(){worker.shutdown();super.onDestroy();}
+    protected void onDestroy(){worker.shutdown();updates.shutdownNow();super.onDestroy();}
 }

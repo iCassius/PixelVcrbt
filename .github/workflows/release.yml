@@ -70,4 +70,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" dist/* --verify-tag --prerelease --title "PixelVcrbt $GITHUB_REF_NAME" --notes-file docs/RELEASE_NOTES.md
+          flags=()
+          if [[ "$GITHUB_REF_NAME" == *-* ]]; then flags+=(--prerelease); fi
+          gh release create "$GITHUB_REF_NAME" dist/* --verify-tag "${flags[@]}" --title "PixelVcrbt $GITHUB_REF_NAME" --notes-file docs/RELEASE_NOTES.md
+      - name: Publish release update feed
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 publish_update.py
