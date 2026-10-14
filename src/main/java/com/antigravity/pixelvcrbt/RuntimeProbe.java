@@ -1,0 +1,36 @@
+package com.antigravity.pixelvcrbt;
+
+import android.Manifest;
+import android.content.*;
+import android.os.*;
+import android.telephony.*;
+import android.telephony.ims.ImsMmTelManager;
+import android.telephony.ims.ImsManager;
+import java.util.function.Supplier;
+
+/** Live nonce-bound query. No persisted result, Root files or Dialer launch. */
+final class RuntimeProbe {
+    static final String UI="com.antigravity.pixelvcrbt", DIALER="com.google.android.dialer";
+    static final String QUERY=UI+".QUERY_RUNTIME", REPLY=UI+".RUNTIME_REPLY";
+    static void install(Context host,Handler main,Supplier<Bundle> snapshot){
+        host.registerReceiver(new BroadcastReceiver(){public void onReceive(Context c,Intent request){
+            String nonce=request.getStringExtra("nonce");if(nonce==null||nonce.length()!=36)return;
+            Bundle result=snapshot.get();
+            send(host,nonce,result);
+            try{
+                SubscriptionInfo target=null;
+                java.util.List<SubscriptionInfo> list=host.getSystemService(SubscriptionManager.class).getActiveSubscriptionInfoList();
+                if(list!=null)for(SubscriptionInfo i:list)if(i.getCarrierId()==2237&&"460".equals(i.getMccString())&&"11".equals(i.getMncString())){
+                    if(target!=null){send(host,nonce,result);return;}target=i;
+                }
+                if(target==null){send(host,nonce,result);return;}
+                host.getSystemService(ImsManager.class).getImsMmTelManager(target.getSubscriptionId()).getRegistrationState(host.getMainExecutor(),state->{
+                    Bundle fresh=snapshot.get();fresh.putInt("ims",state);send(host,nonce,fresh);
+                });
+            }catch(Throwable ignored){send(host,nonce,result);}
+        }},new IntentFilter(QUERY),Manifest.permission.READ_PHONE_STATE,main,Context.RECEIVER_EXPORTED);
+    }
+    private static void send(Context host,String nonce,Bundle result){
+        host.sendBroadcast(new Intent(REPLY).setPackage(UI).putExtra("nonce",nonce).putExtra("result",result));
+    }
+}
