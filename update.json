@@ -2,11 +2,11 @@
   "schema": 1,
   "stable": null,
   "experimental": {
-    "versionCode": 19,
-    "versionName": "3.1.0-experimental",
+    "versionCode": 20,
+    "versionName": "3.1.1-experimental",
     "packageName": "io.github.icassius.pixelvcrbt",
-    "tag": "v3.1.0-experimental",
-    "apk": "PixelVcrbt-v3.1.0-experimental.apk",
-    "sha256": "16952488d734c6aaaf33b6157707142a4566ef70183509ac0c783913326d1ad8"
+    "tag": "v3.1.1-experimental",
+    "apk": "PixelVcrbt-v3.1.1-experimental.apk",
+    "sha256": "f0f35ba40b6c3063b08a0c6f78592d8349e369f1ae6bd256c7ad4275caf75ab1"
   }
 }
