@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.antigravity.pixelvcrbt"
-    android:versionCode="15"
-    android:versionName="2.3.1-experimental">
+    android:versionCode="16"
+    android:versionName="2.3.2-experimental">
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <queries><package android:name="com.google.android.dialer" /></queries>
 

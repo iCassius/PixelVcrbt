@@ -91,7 +91,6 @@ public final class PixelVcrbtBridge implements IXposedHookLoadPackage {
                 protected void beforeHookedMethod(MethodHookParam h){
                     if(!Boolean.TRUE.equals(changingView.get()))for(Session s:copy()){
                         if(h.thisObject==s.placeholder)s.placeholderOwned=false;
-                        s.hiddenControls.remove(h.thisObject);
                     }
                 }
             });
@@ -208,7 +207,6 @@ public final class PixelVcrbtBridge implements IXposedHookLoadPackage {
         boolean placeholderOwned;
         TextView businessLabel;
         CharSequence nativeLabel;
-        final Map<View,Integer> hiddenControls=new IdentityHashMap<>();
         boolean fill=true;
         final Map<View,Drawable[]> changedBackgrounds=new IdentityHashMap<>();
         FrameLayout panel;
@@ -338,13 +336,6 @@ public final class PixelVcrbtBridge implements IXposedHookLoadPackage {
                     try{businessLabel.setText("正在语音呼叫 · 视频彩铃");}finally{changingView.remove();}
                 }
             }
-            for(String name:new String[]{"video_call_second_button","video_call_third_button","video_call_fourth_button"}){
-                int controlId=activity.getResources().getIdentifier(name,"id",PKG);View control=controlId==0?null:activity.findViewById(controlId);
-                if(control!=null&&control.getVisibility()!=View.GONE){
-                    hiddenControls.put(control,control.getVisibility());changingView.set(true);
-                    try{control.setVisibility(View.GONE);}finally{changingView.remove();}
-                }
-            }
         }
         void fitTexture(){
             if(nativeRenderer||texture==null||texture.getWidth()==0||texture.getHeight()==0)return;
@@ -412,9 +403,8 @@ public final class PixelVcrbtBridge implements IXposedHookLoadPackage {
             changingView.set(true);
             try{
                 if(businessLabel!=null&&nativeLabel!=null&&"正在语音呼叫 · 视频彩铃".contentEquals(businessLabel.getText()))businessLabel.setText(nativeLabel);
-                for(Map.Entry<View,Integer> e:hiddenControls.entrySet())if(e.getKey().getVisibility()==View.GONE)e.getKey().setVisibility(e.getValue());
             }finally{changingView.remove();}
-            businessLabel=null;nativeLabel=null;hiddenControls.clear();
+            businessLabel=null;nativeLabel=null;
             if(placeholder!=null&&placeholderOwned&&placeholder.getVisibility()==View.GONE){
                 changingView.set(true);try{placeholder.setVisibility(placeholderVisibility);}finally{changingView.remove();}
             }
