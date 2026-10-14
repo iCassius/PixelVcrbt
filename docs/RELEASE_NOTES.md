@@ -1,4 +1,5 @@
-- 全面迁移 Modern API：最低 101、目标 102，作用域仅 Google Dialer。
+- 正式版 3.1.1，安装包为 PixelVcrbt-v3.1.1.apk。
+- Modern API：最低 101、目标 102，作用域仅 Google Dialer。
 - 简介改为“启用Pixel上的彩铃显示能力”。
 - 保留彩铃显示、原生按键、音频策略、配置兜底与更新检测。
 - 本项目是 LSPosed 彩铃模块，不包含独立 KernelSU PixelIMS 项目。
