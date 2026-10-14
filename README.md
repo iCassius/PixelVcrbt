@@ -4,7 +4,7 @@
 
 当前只在 Pixel 10 Pro XL 10月系统验证测试, 未作其他机型和版本验证
 
-包名：`io.github.icassius.pixelvcrbt`。旧包升级需迁移安装，并停用旧模块。
+包名：`io.github.icassius.pixelvcrbt`。需要支持 Modern API 101+ 的 LSPosed。
 
 ## 安装与确认
 
@@ -29,3 +29,5 @@
 每次开机最多尝试一次前置配置兜底。
 
 需要 IMS 正常注册与媒体协商；页面仅检测注册状态。
+
+本项目是 LSPosed 彩铃模块。PixelIMS 是独立的 KernelSU 通信模块，由其他项目维护。

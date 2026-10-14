@@ -25,7 +25,7 @@ jobs:
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: PixelVcrbt-ci-debug
-          path: PixelVcrbtSurfaceBridge.apk
+          path: PixelVcrbt.apk
           retention-days: 7
   release:
     if: startsWith(github.ref, 'refs/tags/v')
@@ -63,7 +63,7 @@ jobs:
           trap 'rm -f "$RELEASE_KEYSTORE"' EXIT
           python3 build.py
           mkdir -p dist
-          cp PixelVcrbtSurfaceBridge.apk "dist/PixelVcrbt-${GITHUB_REF_NAME}.apk"
+          cp PixelVcrbt.apk "dist/PixelVcrbt-${GITHUB_REF_NAME}.apk"
           cd dist
           sha256sum *.apk > SHA256SUMS.txt
       - name: Publish experimental release

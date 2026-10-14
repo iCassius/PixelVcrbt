@@ -9,3 +9,5 @@ subprocess.run([str(java/('javac'+suffix)),'-encoding','UTF-8','-d',str(out)]+[s
 for name in names:
     subprocess.run([str(java/('java'+suffix)),'-cp',str(out),'io.github.icassius.pixelvcrbt.'+name+'Test'],check=True)
 subprocess.run([sys.executable,str(root/'tests/test_update_feed.py')],check=True)
+
+subprocess.run([sys.executable,str(root/'tests/test_modern_package.py')],check=True)

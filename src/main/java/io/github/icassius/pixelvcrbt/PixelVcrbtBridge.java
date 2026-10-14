@@ -15,11 +15,11 @@ import android.view.*;
 import android.widget.*;
 import java.lang.reflect.*;
 import java.util.*;
-import de.robv.android.xposed.*;
-import de.robv.android.xposed.callbacks.XC_LoadPackage;
+import io.github.libxposed.api.XposedModule;
+import io.github.libxposed.api.XposedInterface;
 
 /** Dialer-only early media renderer and bounded prerequisite fallback. No KSU files or handshake. */
-public final class PixelVcrbtBridge implements IXposedHookLoadPackage {
+public final class PixelVcrbtBridge extends XposedModule {
     private static final String PKG="com.google.android.dialer", TAG="PixelVcrbtBridge";
     private static final String HOST="com.android.dialer.incall.activity.ui.InCallActivity";
     private static final Map<Call,Session> sessions=Collections.synchronizedMap(new IdentityHashMap<>());
@@ -51,23 +51,37 @@ public final class PixelVcrbtBridge implements IXposedHookLoadPackage {
         try{return "1".equals(Class.forName("android.os.SystemProperties").getMethod("get",String.class,String.class).invoke(null,"persist.sys.vcrbt.audio_preserve","1"));}
         catch(Throwable t){return false;}
     }
-    @Override public void handleLoadPackage(final XC_LoadPackage.LoadPackageParam p) throws Throwable {
-        if(!PKG.equals(p.packageName)||!PKG.equals(p.processName))return;
-        XposedHelpers.findAndHookMethod(Instrumentation.class,"callApplicationOnCreate",Application.class,new XC_MethodHook(){
-            @Override protected void afterHookedMethod(MethodHookParam h){initialize((Application)h.args[0],p.classLoader);}
-        });
-        try {
-            Application current=(Application)Class.forName("android.app.ActivityThread").getMethod("currentApplication").invoke(null);
-            if(current!=null)initialize(current,p.classLoader);
-        }catch(Throwable ignored){}
+    private static PixelVcrbtBridge framework;
+    private boolean targetProcess;
+    @Override public void onModuleLoaded(ModuleLoadedParam p) {
+        targetProcess=!p.isSystemServer()&&PKG.equals(p.getProcessName());
+        if(targetProcess){framework=this;status("modern_api_loaded api="+getApiVersion());}
     }
+    @Override public void onPackageReady(PackageReadyParam p) {
+        if(!targetProcess||!PKG.equals(p.getPackageName())||!p.isFirstPackage())return;
+        final ClassLoader loader=p.getClassLoader();
+        try {
+            intercept(Instrumentation.class.getDeclaredMethod("callApplicationOnCreate",Application.class),chain->{
+                Object result=chain.proceed();
+                initialize((Application)chain.getArg(0),loader);
+                return result;
+            });
+            Application current=(Application)Class.forName("android.app.ActivityThread").getMethod("currentApplication").invoke(null);
+            if(current!=null)initialize(current,loader);
+        }catch(Throwable t){status("init_failed error="+t.getClass().getSimpleName());android.util.Log.e(TAG,"Modern entry failure",t);}
+    }
+    private static void intercept(Method method,XposedInterface.Hooker callback) {
+        framework.hook(method).setExceptionMode(XposedInterface.ExceptionMode.PROTECTIVE).intercept(callback);
+    }
+    // Sessions retain Android objects and Surface ownership: reload only by restarting Dialer.
+    @Override public boolean onHotReloading(HotReloadingParam p){return false;}
     private static Method declared(Class<?> type,String name,Class<?>...parameters)throws Exception {
         for(Class<?> c=type;c!=null;c=c.getSuperclass())try {return c.getDeclaredMethod(name,parameters);}catch(NoSuchMethodException ignored){}
         throw new NoSuchMethodException(name);
     }
-    private static void hookNamed(Class<?> type,String name,XC_MethodHook hook)throws Exception{
+    private static void hookNamed(Class<?> type,String name,XposedInterface.Hooker callback)throws Exception{
         for(Class<?> c=type;c!=null;c=c.getSuperclass()){
-            boolean found=false;for(Method m:c.getDeclaredMethods())if(m.getName().equals(name)){XposedBridge.hookMethod(m,hook);found=true;}
+            boolean found=false;for(Method m:c.getDeclaredMethods())if(m.getName().equals(name)){intercept(m,callback);found=true;}
             if(found)return;
         }
         throw new NoSuchMethodException(name);
@@ -87,27 +101,25 @@ public final class PixelVcrbtBridge implements IXposedHookLoadPackage {
             Method added=declared(service,"onCallAdded",Call.class),removed=declared(service,"onCallRemoved",Call.class);
             if(added.getReturnType()!=void.class||removed.getReturnType()!=void.class)throw new IllegalStateException("Callback signature");
             app=context;main=new Handler(Looper.getMainLooper());
-            XposedHelpers.findAndHookMethod(View.class,"setVisibility",int.class,new XC_MethodHook(){
-                protected void beforeHookedMethod(MethodHookParam h){
-                    if(!Boolean.TRUE.equals(changingView.get()))for(Session s:copy()){
-                        if(h.thisObject==s.placeholder)s.placeholderOwned=false;
-                    }
-                }
+            intercept(View.class.getDeclaredMethod("setVisibility",int.class),chain->{
+                if(!Boolean.TRUE.equals(changingView.get()))for(Session s:copy())
+                    if(chain.getThisObject()==s.placeholder)s.placeholderOwned=false;
+                return chain.proceed();
             });
-            XposedHelpers.findAndHookMethod(TextView.class,"setText",CharSequence.class,TextView.BufferType.class,new XC_MethodHook(){
-                protected void beforeHookedMethod(MethodHookParam h){if(!Boolean.TRUE.equals(changingView.get()))for(Session s:copy())
-                    if(h.thisObject==s.businessLabel&&s.surfaceSubmitted){s.nativeLabel=(CharSequence)h.args[0];h.args[0]="正在语音呼叫 · 视频彩铃";}
-                }
+            intercept(TextView.class.getDeclaredMethod("setText",CharSequence.class,TextView.BufferType.class),chain->{
+                Object[] args=chain.getArgs().toArray();
+                if(!Boolean.TRUE.equals(changingView.get()))for(Session s:copy())
+                    if(chain.getThisObject()==s.businessLabel&&s.surfaceSubmitted){s.nativeLabel=(CharSequence)args[0];args[0]="正在语音呼叫 · 视频彩铃";}
+                return chain.proceed(args);
             });
-            XposedBridge.hookMethod(added,new XC_MethodHook(){
-                @Override protected void afterHookedMethod(MethodHookParam h){
-                    Call c=(Call)h.args[0];InCallService service=(InCallService)h.thisObject;main.post(()->add(c,service));
-                }
+            intercept(added,chain->{
+                Object result=chain.proceed();
+                Call c=(Call)chain.getArg(0);InCallService owner=(InCallService)chain.getThisObject();main.post(()->add(c,owner));
+                return result;
             });
-            XposedBridge.hookMethod(removed,new XC_MethodHook(){
-                @Override protected void beforeHookedMethod(MethodHookParam h){
-                    Call c=(Call)h.args[0];main.post(()->remove(c));
-                }
+            intercept(removed,chain->{
+                Call c=(Call)chain.getArg(0);main.post(()->remove(c));
+                return chain.proceed();
             });
             context.registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks(){
                 public void onActivityResumed(Activity a){if(HOST.equals(a.getClass().getName())){foreground=a;wakeAll();}}
@@ -118,9 +130,10 @@ public final class PixelVcrbtBridge implements IXposedHookLoadPackage {
                 public void onActivityStopped(Activity a){}
                 public void onActivitySaveInstanceState(Activity a,Bundle b){}
             });
-            XC_MethodHook audioRequest=new XC_MethodHook(){protected void beforeHookedMethod(MethodHookParam h){
-                if(!Boolean.TRUE.equals(changingAudio.get()))for(Session s:copy())if(s.service==h.thisObject){s.policy.userAudio();status("user_audio_selection_preserved");}
-            }};
+            XposedInterface.Hooker audioRequest=chain->{
+                if(!Boolean.TRUE.equals(changingAudio.get()))for(Session s:copy())if(s.service==chain.getThisObject()){s.policy.userAudio();status("user_audio_selection_preserved");}
+                return chain.proceed();
+            };
             hookNamed(InCallService.class,"setAudioRoute",audioRequest);
             hookNamed(InCallService.class,"requestCallEndpointChange",audioRequest);
             hookNamed(InCallService.class,"requestBluetoothAudio",audioRequest);
@@ -176,16 +189,14 @@ public final class PixelVcrbtBridge implements IXposedHookLoadPackage {
     private static void trace(InCallService.VideoCall vc) throws Exception {
         if(vc==null||traced.contains(vc.getClass()))return;
         Method m=declared(vc.getClass(),"setDisplaySurface",Surface.class);
-        XposedBridge.hookMethod(m,new XC_MethodHook(){
-            @Override protected void beforeHookedMethod(MethodHookParam h){
-                for(Session s:copy())if(s.provider==h.thisObject)s.ownsBinding=h.args[0]!=null&&h.args[0]==s.surface;
-            }
+        intercept(m,chain->{
+            for(Session s:copy())if(s.provider==chain.getThisObject())s.ownsBinding=chain.getArg(0)!=null&&chain.getArg(0)==s.surface;
+            return chain.proceed();
         });
         traced.add(vc.getClass());
-        hookNamed(vc.getClass(),"sendSessionModifyRequest",new XC_MethodHook(){
-            protected void beforeHookedMethod(MethodHookParam h){
-                for(Session s:copy())if(s.provider==h.thisObject){s.policy.userVideo();s.queue();status("user_video_request_native_only");}
-            }
+        hookNamed(vc.getClass(),"sendSessionModifyRequest",chain->{
+            for(Session s:copy())if(s.provider==chain.getThisObject()){s.policy.userVideo();s.queue();status("user_video_request_native_only");}
+            return chain.proceed();
         });
     }
     private static final class Session {
@@ -373,12 +384,12 @@ public final class PixelVcrbtBridge implements IXposedHookLoadPackage {
             if(nativeListener==null||textureListeners.contains(nativeListener.getClass()))return;
             try{
                 Method method=declared(nativeListener.getClass(),"onSurfaceTextureUpdated",SurfaceTexture.class);
-                XposedBridge.hookMethod(method,new XC_MethodHook(){
-                    protected void afterHookedMethod(MethodHookParam p){
-                        for(Session s:copy())if(s.nativeRenderer&&s.nativeListener==p.thisObject&&s.nativeTexture==p.args[0]&&s.surfaceSubmitted&&!s.contentUpdated){
-                            s.contentUpdated=true;status("surface_content_updated renderer=native evidence=texture_update_not_visual_acceptance");
-                        }
+                intercept(method,chain->{
+                    Object result=chain.proceed();
+                    for(Session s:copy())if(s.nativeRenderer&&s.nativeListener==chain.getThisObject()&&s.nativeTexture==chain.getArg(0)&&s.surfaceSubmitted&&!s.contentUpdated){
+                        s.contentUpdated=true;status("surface_content_updated renderer=native evidence=texture_update_not_visual_acceptance");
                     }
+                    return result;
                 });textureListeners.add(nativeListener.getClass());
             }catch(Throwable t){android.util.Log.w(TAG,"Native texture observation unavailable",t);}
         }
