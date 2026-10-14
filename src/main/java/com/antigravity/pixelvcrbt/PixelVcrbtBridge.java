@@ -135,16 +135,8 @@ public final class PixelVcrbtBridge implements IXposedHookLoadPackage {
     }
     private static List<Session> copy(){synchronized(sessions){return new ArrayList<>(sessions.values());}}
     private static Bundle snapshot(){
-        Bundle b=new Bundle();b.putBoolean("hook",installed);b.putString("init",initReason);b.putInt("ims",-1);
-        List<Session> live=copy();b.putInt("calls",live.size());
-        if(live.size()==1){Session s=live.get(0);Call.Details d=s.call.getDetails();
-            b.putInt("call_state",s.call.getState());
-            boolean eligible=s.voiceOrigin&&target(s.call)&&!s.policy.userVideoRequested();
-            // Only the original early-media phase; never classify explicit video or ACTIVE as彩铃.
-            boolean early=eligible&&d!=null&&s.policy.isEarlyMedia(s.call.getState(),d.getVideoState());
-            b.putBoolean("eligible",eligible);b.putBoolean("early",early);
-            b.putBoolean("surface",early&&s.surfaceSubmitted);b.putBoolean("frames",early&&s.frameObserved);
-        }return b;
+        Bundle b=new Bundle();b.putBoolean("hook",installed);b.putString("init",initReason);
+        b.putInt("ims",-1);b.putInt("pid",android.os.Process.myPid());return b;
     }
     private static void wakeAll(){for(Session s:copy())s.queue();}
     private static void add(Call c,InCallService service) {
@@ -224,7 +216,6 @@ public final class PixelVcrbtBridge implements IXposedHookLoadPackage {
         volatile boolean ownsBinding;
         boolean closed;
         boolean surfaceSubmitted,contentUpdated;
-        boolean frameObserved;
         int mediaWidth=540,mediaHeight=960;
         long submittedGeneration=-1;
         final Runnable pending=()->evaluate();
@@ -321,7 +312,7 @@ public final class PixelVcrbtBridge implements IXposedHookLoadPackage {
                 public boolean onSurfaceTextureDestroyed(SurfaceTexture st){if(texture==owned)releaseSurface();return true;}
                 public void onSurfaceTextureUpdated(SurfaceTexture st){
                     if(texture==owned&&surface!=null&&submittedGeneration==gate.generation()){
-                        contentUpdated=true;frameObserved=true;status("surface_content_updated generation="+submittedGeneration+" evidence=texture_update_not_visual_acceptance");submittedGeneration=-1;
+                        contentUpdated=true;status("surface_content_updated generation="+submittedGeneration+" evidence=texture_update_not_visual_acceptance");submittedGeneration=-1;
                     }
                 }
             });
@@ -394,7 +385,7 @@ public final class PixelVcrbtBridge implements IXposedHookLoadPackage {
                 XposedBridge.hookMethod(method,new XC_MethodHook(){
                     protected void afterHookedMethod(MethodHookParam p){
                         for(Session s:copy())if(s.nativeRenderer&&s.nativeListener==p.thisObject&&s.nativeTexture==p.args[0]&&s.surfaceSubmitted&&!s.contentUpdated){
-                            s.contentUpdated=true;s.frameObserved=true;status("surface_content_updated renderer=native evidence=texture_update_not_visual_acceptance");
+                            s.contentUpdated=true;status("surface_content_updated renderer=native evidence=texture_update_not_visual_acceptance");
                         }
                     }
                 });textureListeners.add(nativeListener.getClass());

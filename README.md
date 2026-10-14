@@ -14,11 +14,14 @@
 ## 功能边界
 
 系统通话记录将彩铃记为视频的问题仍未修复，未增加系统作用域。
-依赖参数:
-carrier_vt_available_bool
-imsvt.video_on_default_bearer_supported_bool
-vendor.ims.carrier_video_over_lte_bool
-vendor.ims.carrier_video_over_wifi_bool
-开机最多尝试一次加载
 
-需要IMS正确握手,模块仅检测
+依赖参数：
+
+- `carrier_vt_available_bool`
+- `imsvt.video_on_default_bearer_supported_bool`
+- `vendor.ims.carrier_video_over_lte_bool`
+- `vendor.ims.carrier_video_over_wifi_bool`
+
+每次开机最多尝试一次前置配置兜底。
+
+需要 IMS 正常注册与媒体协商；页面仅检测注册状态。

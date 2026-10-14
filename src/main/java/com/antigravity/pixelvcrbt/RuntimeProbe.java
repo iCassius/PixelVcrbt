@@ -16,20 +16,21 @@ final class RuntimeProbe {
         host.registerReceiver(new BroadcastReceiver(){public void onReceive(Context c,Intent request){
             String nonce=request.getStringExtra("nonce");if(nonce==null||nonce.length()!=36)return;
             Bundle result=snapshot.get();
+            result.putBoolean("ims_pending",true);
             send(host,nonce,result);
             try{
                 SubscriptionInfo target=null;
                 java.util.List<SubscriptionInfo> list=host.getSystemService(SubscriptionManager.class).getActiveSubscriptionInfoList();
                 if(list!=null)for(SubscriptionInfo i:list)if(i.getCarrierId()==2237&&"460".equals(i.getMccString())&&"11".equals(i.getMncString())){
-                    if(target!=null){send(host,nonce,result);return;}target=i;
+                    if(target!=null){result.putBoolean("ims_pending",false);send(host,nonce,result);return;}target=i;
                 }
-                if(target==null){send(host,nonce,result);return;}
+                if(target==null){result.putBoolean("ims_pending",false);send(host,nonce,result);return;}
                 final int sid=target.getSubscriptionId();
                 attempt(host,sid,result);send(host,nonce,result);
                 host.getSystemService(ImsManager.class).getImsMmTelManager(sid).getRegistrationState(host.getMainExecutor(),state->{
                     Bundle fresh=snapshot.get();attempt(host,sid,fresh);fresh.putInt("ims",state);send(host,nonce,fresh);
                 });
-            }catch(Throwable ignored){send(host,nonce,result);}
+            }catch(Throwable ignored){result.putBoolean("ims_pending",false);send(host,nonce,result);}
         }},new IntentFilter(QUERY),Manifest.permission.READ_PHONE_STATE,main,Context.RECEIVER_EXPORTED);
     }
     private static void attempt(Context host,int sid,Bundle result){
@@ -37,6 +38,6 @@ final class RuntimeProbe {
         result.putBoolean("fallback_attempted",host.getSharedPreferences("pixel_vcrbt_fallback",0).getBoolean(boot+":"+sid,false));
     }
     private static void send(Context host,String nonce,Bundle result){
-        host.sendBroadcast(new Intent(REPLY).setPackage(UI).putExtra("nonce",nonce).putExtra("result",result));
+        host.sendBroadcast(new Intent(REPLY).setPackage(UI).addFlags(Intent.FLAG_RECEIVER_FOREGROUND).putExtra("nonce",nonce).putExtra("result",result));
     }
 }

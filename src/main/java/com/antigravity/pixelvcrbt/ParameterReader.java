@@ -20,7 +20,7 @@ final class ParameterReader {
         {"vendor.ims.carrier_video_over_lte_bool","允许 LTE 视频传输"},
         {"vendor.ims.carrier_video_over_wifi_bool","允许 VoWiFi 视频传输"}
     };
-    static final class Result {final Map<String,Object> values=new HashMap<>();boolean fallbackAvailable;}
+    static final class Result {final Map<String,Object> values=new HashMap<>();boolean fallbackAvailable,compatible,configReady,targetFound;}
     static String state(Object value){return value instanceof Boolean?((Boolean)value?"已启用":"已禁用"):"未检测到";}
     static Result read(Context context){
         Result result=new Result();int sid=-1;
@@ -30,10 +30,11 @@ final class ParameterReader {
             modify=context.getPackageManager().checkPermission(Manifest.permission.MODIFY_PHONE_STATE,"com.google.android.dialer")==PackageManager.PERMISSION_GRANTED;
         }catch(Exception ignored){}
         Boolean disabled=property("persist.sys.vcrbt.disabled",false),audio=property("persist.sys.vcrbt.audio_preserve",true),fallback=property("persist.sys.vcrbt.carrier_fallback",true);
-        result.values.put(MODULE_FIELDS[0][0],disabled==null?null:compatible&&!disabled);
-        result.values.put(MODULE_FIELDS[1][0],audio==null?null:compatible&&Boolean.TRUE.equals(audio));
+        result.compatible=compatible;
+        result.values.put(MODULE_FIELDS[0][0],disabled==null?null:!disabled);
+        result.values.put(MODULE_FIELDS[1][0],audio);
         result.fallbackAvailable=compatible&&modify&&Boolean.FALSE.equals(disabled)&&Boolean.TRUE.equals(fallback);
-        result.values.put(MODULE_FIELDS[2][0],result.fallbackAvailable);
+        result.values.put(MODULE_FIELDS[2][0],fallback);
         try{
             if(context.checkSelfPermission(Manifest.permission.READ_PHONE_STATE)==PackageManager.PERMISSION_GRANTED){
                 List<SubscriptionInfo> list=context.getSystemService(SubscriptionManager.class).getActiveSubscriptionInfoList();
@@ -41,8 +42,9 @@ final class ParameterReader {
                     if(sid!=-1){sid=-1;break;}sid=i.getSubscriptionId();
                 }
                 if(sid!=-1){
+                    result.targetFound=true;
                     PersistableBundle b=context.getSystemService(CarrierConfigManager.class).getConfigForSubId(sid,FallbackPlan.KEYS);
-                    if(CarrierConfigManager.isConfigForIdentifiedCarrier(b))for(String key:FallbackPlan.KEYS)if(b.containsKey(key))result.values.put(key,b.get(key));
+                    if(CarrierConfigManager.isConfigForIdentifiedCarrier(b)){result.configReady=true;for(String key:FallbackPlan.KEYS)if(b.containsKey(key))result.values.put(key,b.get(key));}
                 }
             }
         }catch(Throwable t){android.util.Log.w("PixelVcrbtStatus","Direct read unavailable: "+t.getClass().getSimpleName());}
