@@ -1,6 +1,13 @@
 {
   "schema": 1,
-  "stable": null,
+  "stable": {
+    "versionCode": 21,
+    "versionName": "3.1.1",
+    "packageName": "io.github.icassius.pixelvcrbt",
+    "tag": "v3.1.1",
+    "apk": "PixelVcrbt-v3.1.1.apk",
+    "sha256": "38c224bf0688c0d8b0347c65107a2d05b1bb3a44cdc6c9f974c3d5b22b3520e9"
+  },
   "experimental": {
     "versionCode": 20,
     "versionName": "3.1.1-experimental",
