@@ -11,7 +11,7 @@ final class UpdateChecker {
     static Result check(String current,long currentCode,String packageName){
         ModuleVersion installed=ModuleVersion.parse(current);if(installed==null)return new Result("版本格式未知",null);
         try{
-            JSONObject feed=new JSONObject(read("https://raw.githubusercontent.com/iCassius/PixelVcrbt/main/update.json"));
+            JSONObject feed=new JSONObject(read("https://raw.githubusercontent.com/iCassius/PixelVcrbt/main/update.json?check="+(System.currentTimeMillis()/60000L)));
             if(feed.getInt("schema")!=1)throw new IOException("Unknown feed");
             JSONObject latest=null;
             for(String channel:new String[]{"stable","experimental"}){
@@ -32,6 +32,8 @@ final class UpdateChecker {
     private static String read(String url)throws Exception{
         HttpURLConnection connection=(HttpURLConnection)new URL(url).openConnection();
         try{
+            connection.setUseCaches(false);
+            connection.setRequestProperty("Cache-Control","no-cache");
             connection.setConnectTimeout(5000);connection.setReadTimeout(5000);connection.setInstanceFollowRedirects(false);
             connection.setRequestProperty("User-Agent","PixelVcrbt-update-check");
             int status=connection.getResponseCode();if(status!=200)throw new IOException("HTTP "+status);

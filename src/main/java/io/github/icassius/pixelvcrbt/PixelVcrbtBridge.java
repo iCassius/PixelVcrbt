@@ -74,7 +74,7 @@ public final class PixelVcrbtBridge extends XposedModule {
         framework.hook(method).setExceptionMode(XposedInterface.ExceptionMode.PROTECTIVE).intercept(callback);
     }
     // Sessions retain Android objects and Surface ownership: reload only by restarting Dialer.
-    @Override public boolean onHotReloading(HotReloadingParam p){return false;}
+    // API 102 defaults to rejecting hot reload; no API 102-only parameter types here.
     private static Method declared(Class<?> type,String name,Class<?>...parameters)throws Exception {
         for(Class<?> c=type;c!=null;c=c.getSuperclass())try {return c.getDeclaredMethod(name,parameters);}catch(NoSuchMethodException ignored){}
         throw new NoSuchMethodException(name);
