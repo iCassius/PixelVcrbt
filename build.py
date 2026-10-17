@@ -5,6 +5,8 @@ import sys
 import zipfile
 import hashlib
 import urllib.request
+import xml.etree.ElementTree as ET
+import json
 
 PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
 SDK_DIR = os.environ.get('ANDROID_HOME') or os.environ.get('ANDROID_SDK_ROOT')
@@ -23,7 +25,10 @@ if not JAVA_HOME: raise RuntimeError('Set JAVA_HOME to JDK 21')
 JAVAC = os.path.join(JAVA_HOME, 'bin', 'javac.exe' if WIN else 'javac')
 KEYTOOL = os.path.join(JAVA_HOME, 'bin', 'keytool.exe' if WIN else 'keytool')
 
-BUILD_DIR = os.path.join(PROJECT_DIR, "build")
+BUILD_ROOT = os.path.realpath(os.path.join(PROJECT_DIR, "build"))
+BUILD_DIR = os.path.realpath(os.environ.get('PIXELVCRBT_BUILD_DIR',BUILD_ROOT))
+if os.path.commonpath([os.path.normcase(BUILD_ROOT),os.path.normcase(BUILD_DIR)]) != os.path.normcase(BUILD_ROOT):
+    raise RuntimeError('Build directory must stay inside this project build folder')
 MODULE_CLASSES_DIR = os.path.join(BUILD_DIR, "module_classes")
 RES_COMPILED_DIR = os.path.join(BUILD_DIR, "res_compiled")
 KEYSTORE_PATH = os.environ.get('RELEASE_KEYSTORE',os.path.join(BUILD_DIR,'debug.keystore'))
@@ -76,6 +81,20 @@ def compile_java():
     module_src = []
     for root, _, files in os.walk(os.path.join(PROJECT_DIR, "src", "main", "java")):
         module_src.extend(os.path.join(root, f) for f in sorted(files) if f.endswith(".java"))
+    # Immutable identity travels with the loaded code, including unreleased builds of the same version.
+    manifest=ET.parse(os.path.join(PROJECT_DIR,'src/main/AndroidManifest.xml')).getroot()
+    ns='{http://schemas.android.com/apk/res/android}'
+    digest=hashlib.sha256()
+    identity_inputs=[os.path.join(PROJECT_DIR,'build.py')]
+    for root,_,files in os.walk(os.path.join(PROJECT_DIR,'src/main')):
+        identity_inputs.extend(os.path.join(root,name) for name in files)
+    for path in sorted(identity_inputs):
+        digest.update(os.path.relpath(path,PROJECT_DIR).replace(os.sep,'/').encode('utf-8'))
+        with open(path,'rb') as source:digest.update(source.read().replace(b'\r\n',b'\n'))
+    identity=os.path.join(BUILD_DIR,'BuildIdentity.java')
+    with open(identity,'w',encoding='utf-8') as source:
+        source.write('package io.github.icassius.pixelvcrbt; final class BuildIdentity { static final String NAME='+json.dumps(manifest.get(ns+'versionName'))+'; static final long CODE='+manifest.get(ns+'versionCode')+'L; static final String SOURCE="'+digest.hexdigest()+'"; }\n')
+    module_src.append(identity)
     classpath = os.pathsep.join([PLATFORM_JAR, api_jar])
     cmd_module = [
         JAVAC, "-encoding", "UTF-8", "-source", "8", "-target", "8",
@@ -92,12 +111,16 @@ def dex_classes():
             if f.endswith(".class"):
                 class_files.append(os.path.join(root, f))
 
+    # A single archive also avoids Windows batch command-length limits as the module grows.
+    classes_jar=os.path.join(BUILD_DIR,'module-classes.jar')
+    with zipfile.ZipFile(classes_jar,'w') as archive:
+        for path in sorted(class_files):archive.write(path,os.path.relpath(path,MODULE_CLASSES_DIR).replace(os.sep,'/'))
     cmd_d8 = [
         D8,
         "--min-api", "28",
         "--output", BUILD_DIR,
         "--lib", PLATFORM_JAR, "--classpath", os.path.join(BUILD_DIR,"libxposed-api.jar")
-    ] + class_files
+    ] + [classes_jar]
     run_cmd(cmd_d8)
 
 def package_and_sign():
@@ -146,7 +169,7 @@ def package_and_sign():
     ]
     run_cmd(cmd_zipalign)
 
-    final_apk = os.path.join(PROJECT_DIR, "PixelVcrbt.apk")
+    final_apk = os.environ.get('PIXELVCRBT_APK',os.path.join(PROJECT_DIR, "PixelVcrbt.apk"))
     if os.path.exists(final_apk):
         os.remove(final_apk)
     shutil.copy2(aligned_apk, final_apk)

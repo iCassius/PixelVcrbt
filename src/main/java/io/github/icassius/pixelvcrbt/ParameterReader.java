@@ -20,20 +20,19 @@ final class ParameterReader {
         {"vendor.ims.carrier_video_over_lte_bool","允许 LTE 视频传输"},
         {"vendor.ims.carrier_video_over_wifi_bool","允许 VoWiFi 视频传输"}
     };
-    static final class Result {final Map<String,Object> values=new HashMap<>();boolean fallbackAvailable,compatible,configReady,targetFound;}
+    static final class Result {final Map<String,Object> values=new HashMap<>();boolean fallbackAvailable,configReady,targetFound;}
     static String state(Object value){return value instanceof Boolean?((Boolean)value?"已启用":"已禁用"):"未检测到";}
     static Result read(Context context){
         Result result=new Result();int sid=-1;
-        boolean compatible=false,modify=false;
+        boolean modify=false;
         try{
-            compatible="mustang".equals(Build.DEVICE)&&"CP3A.260905.009".equals(Build.DISPLAY)&&context.getPackageManager().getPackageInfo("com.google.android.dialer",0).getLongVersionCode()==20148463L;
             modify=context.getPackageManager().checkPermission(Manifest.permission.MODIFY_PHONE_STATE,"com.google.android.dialer")==PackageManager.PERMISSION_GRANTED;
         }catch(Exception ignored){}
         Boolean disabled=property("persist.sys.vcrbt.disabled",false),audio=property("persist.sys.vcrbt.audio_preserve",true),fallback=property("persist.sys.vcrbt.carrier_fallback",true);
-        result.compatible=compatible;
         result.values.put(MODULE_FIELDS[0][0],disabled==null?null:!disabled);
         result.values.put(MODULE_FIELDS[1][0],audio);
-        result.fallbackAvailable=compatible&&modify&&Boolean.FALSE.equals(disabled)&&Boolean.TRUE.equals(fallback);
+        // UI-side prerequisites only; host capability must arrive in a fresh runtime reply.
+        result.fallbackAvailable=modify&&Boolean.FALSE.equals(disabled)&&Boolean.TRUE.equals(fallback);
         result.values.put(MODULE_FIELDS[2][0],fallback);
         try{
             if(context.checkSelfPermission(Manifest.permission.READ_PHONE_STATE)==PackageManager.PERMISSION_GRANTED){
@@ -48,7 +47,7 @@ final class ParameterReader {
                 }
             }
         }catch(Throwable t){android.util.Log.w("PixelVcrbtStatus","Direct read unavailable: "+t.getClass().getSimpleName());}
-        android.util.Log.i("PixelVcrbtStatus","direct_read subId="+sid+" provider_keys="+(result.values.size()-3)+" fallback_available="+result.fallbackAvailable+" dialer_dependency=false");
+        android.util.Log.i("PixelVcrbtStatus","direct_read subId="+sid+" provider_keys="+(result.values.size()-3)+" fallback_prerequisites="+result.fallbackAvailable+" dialer_dependency=false");
         return result;
     }
     private static Boolean property(String key,boolean def){

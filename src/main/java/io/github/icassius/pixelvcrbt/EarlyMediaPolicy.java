@@ -18,6 +18,7 @@ public final class EarlyMediaPolicy {
     public boolean userVideoRequested(){return realVideo;}
     public void userAudio(){userAudio=true;}
     public boolean isEarlyMedia(int state,int video){return voiceOrigin&&!realVideo&&state==1&&video==2;}
+    public boolean mayControlAudio(int state,int video){return !userAudio&&isEarlyMedia(state,video);}
     public boolean shouldRestore(boolean enabled,boolean eligible,int state,int video,int route,int supported){
         return enabled&&eligible&&isEarlyMedia(state,video)&&earlyMedia&&!userAudio&&!attempted&&
             originRoute==1&&route==8&&(supported&1)!=0;

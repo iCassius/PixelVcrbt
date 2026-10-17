@@ -15,6 +15,11 @@ public final class DetectionStatusTest {
         check(DetectionStatus.ims(false,true,true,true,0,false),"未注册");
         check(DetectionStatus.ims(false,true,true,true,-1,true),"检测中");
         check(DetectionStatus.ims(false,true,true,true,-1,false),"不可读取");
+        check(DetectionStatus.ims(false,true,true,false,2,false),"已注册");
+        check(DetectionStatus.connection(false,true,true,false,"probing",true),"正在适配");
+        check(DetectionStatus.connection(false,true,true,false,"installing",true),"正在适配");
+        check(DetectionStatus.connection(false,true,true,true,"ready",false),"需重新加载");
+        check(DetectionStatus.connection(false,true,true,false,"degraded",true),"运行异常");
         System.out.println("DetectionStatus: "+checks+" assertions passed");
     }
 }
